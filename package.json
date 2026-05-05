@@ -5,6 +5,7 @@
   "description": "抖音小游戏找不同初版框架",
   "scripts": {
     "generate:assets": "node tools/generate-assets.js",
-    "check": "node --check game.js && node --check src/Game.js && node --check src/gameState.js && node --check src/input.js && node --check src/levels.js && node --check src/platform.js && node --check src/renderer.js && node --check tools/generate-assets.js"
+    "generate:audio": "node tools/generate-audio.js",
+    "check": "node --check game.js && node --check src/Game.js && node --check src/audio.js && node --check src/gameState.js && node --check src/input.js && node --check src/levels.js && node --check src/platform.js && node --check src/renderer.js && node --check tools/generate-assets.js && node --check tools/generate-audio.js"
   }
 }

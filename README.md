@@ -15,6 +15,7 @@
 
 ```bash
 npm run generate:assets
+npm run generate:audio
 npm run check
 ```
 
@@ -44,3 +45,14 @@ npm run check
 ```
 
 `x`、`y`、`radius` 都使用原图像素坐标。
+
+## 替换音乐和音效
+
+当前项目自带几段原创占位 WAV，位于 `assets/audio/`：
+
+- `bgm-cheerful.wav`：欢快循环背景音乐。
+- `hit-correct.wav`：找对差异点的积极反馈音。
+- `level-complete.wav`：通关音效。
+- `restart-soft.wav`：重置/切关音效。
+
+后续如果要换正式素材，保持文件名不变即可；也可以改 `src/audio.js` 里的 `AUDIO_FILES` 路径。

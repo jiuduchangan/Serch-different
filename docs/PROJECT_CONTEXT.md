@@ -11,6 +11,7 @@
 - 已创建开发者工具导入配置：`project.config.json`。
 - 已实现 Canvas 渲染、点击输入、关卡状态、差异点命中判断。
 - 已生成两组本地卡通占位关卡图片，位于 `assets/`。
+- 已接入音频框架，包含背景音乐、命中反馈、通关音效和音乐开关。
 - 已提供关卡配置，位于 `src/levels.js`。
 
 ## 核心玩法
@@ -28,10 +29,11 @@
 
 ```bash
 npm run generate:assets
+npm run generate:audio
 npm run check
 ```
 
-`npm run generate:assets` 会重新生成占位图片。`npm run check` 会做 JavaScript 语法检查。
+`npm run generate:assets` 会重新生成占位图片。`npm run generate:audio` 会重新生成原创占位音频。`npm run check` 会做 JavaScript 语法检查。
 
 导入抖音开发者工具后，需要验证：
 
@@ -42,6 +44,9 @@ npm run check
 - 点击空白处只显示短暂错误反馈。
 - 找完全部差异后出现通关弹层。
 - 点击“下一关”或“再玩一次”能继续。
+- 第一次点击后背景音乐开始播放。
+- 找对差异点有积极反馈音，通关有完成音。
+- 点击右上角音乐按钮可以开关音乐。
 
 ## 重要文件
 
@@ -53,8 +58,10 @@ npm run check
 - `src/gameState.js`：关卡进度和命中状态。
 - `src/renderer.js`：Canvas 布局和绘制。
 - `src/input.js`：点击坐标映射。
+- `src/audio.js`：背景音乐、音效播放和音乐开关。
 - `src/levels.js`：关卡图片与差异点配置。
 - `tools/generate-assets.js`：占位图片生成脚本。
+- `tools/generate-audio.js`：原创占位音频生成脚本。
 
 ## 下一步建议
 

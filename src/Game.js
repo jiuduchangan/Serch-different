@@ -1,4 +1,5 @@
 const GameState = require('./gameState');
+const AudioManager = require('./audio');
 const input = require('./input');
 const levels = require('./levels');
 const platform = require('./platform');
@@ -8,12 +9,14 @@ class Game {
   constructor() {
     this.stage = platform.createStage();
     this.state = new GameState(levels);
+    this.audio = new AudioManager(this.stage.platform);
     this.images = { left: null, right: null };
     this.loading = true;
     this.layout = renderer.computeLayout(this.stage.width, this.stage.height, this.state.level);
   }
 
   start() {
+    this.audio.init();
     platform.onTap(this.stage.canvas, (x, y) => this.handleTap(x, y));
     this.loadLevel();
     this.loop();
@@ -37,7 +40,14 @@ class Game {
   }
 
   handleTap(x, y) {
+    this.audio.unlock();
+
     if (this.loading) {
+      return;
+    }
+
+    if (input.contains(this.layout.audioButton, x, y)) {
+      this.audio.toggle();
       return;
     }
 
@@ -45,11 +55,13 @@ class Game {
       this.state.nextLevel();
       this.layout = renderer.computeLayout(this.stage.width, this.stage.height, this.state.level);
       this.loadLevel();
+      this.audio.playRestart();
       return;
     }
 
     if (input.contains(this.layout.restartButton, x, y)) {
       this.state.resetLevel();
+      this.audio.playRestart();
       return;
     }
 
@@ -59,7 +71,14 @@ class Game {
 
     const point = input.screenToImagePoint(this.layout, this.state.level, x, y);
     if (point) {
-      this.state.findAt(point);
+      const hit = this.state.findAt(point);
+      if (hit) {
+        if (this.state.isComplete) {
+          this.audio.playComplete();
+        } else {
+          this.audio.playHit();
+        }
+      }
     }
   }
 
@@ -68,7 +87,8 @@ class Game {
       state: this.state,
       images: this.images,
       layout: this.layout,
-      loading: this.loading
+      loading: this.loading,
+      audioEnabled: this.audio.enabled
     });
 
     platform.nextFrame(() => this.loop());

@@ -54,6 +54,12 @@ function computeLayout(width, height, level) {
       y: height / 2 + 82,
       width: 152,
       height: 46
+    },
+    audioButton: {
+      x: width - margin - 42,
+      y: 36,
+      width: 34,
+      height: 34
     }
   };
 }
@@ -68,9 +74,9 @@ function makePanel(side, label, x, y, width, imageHeight, labelHeight) {
 }
 
 function render(ctx, model) {
-  const { state, images, layout, loading } = model;
+  const { state, images, layout, loading, audioEnabled } = model;
   clear(ctx, layout.width, layout.height);
-  drawTopBar(ctx, layout, state);
+  drawTopBar(ctx, layout, state, audioEnabled);
 
   if (loading) {
     drawLoading(ctx, layout);
@@ -93,7 +99,7 @@ function clear(ctx, width, height) {
   ctx.fillRect(0, 0, width, height);
 }
 
-function drawTopBar(ctx, layout, state) {
+function drawTopBar(ctx, layout, state, audioEnabled) {
   ctx.fillStyle = COLORS.ink;
   ctx.font = '700 22px sans-serif';
   ctx.textBaseline = 'top';
@@ -107,7 +113,8 @@ function drawTopBar(ctx, layout, state) {
   ctx.font = '700 22px sans-serif';
   const progressWidth = ctx.measureText(progressText).width;
   ctx.fillStyle = COLORS.primary;
-  ctx.fillText(progressText, layout.width - layout.margin - progressWidth, 26);
+  ctx.fillText(progressText, layout.audioButton.x - 12 - progressWidth, 26);
+  drawAudioButton(ctx, layout.audioButton, audioEnabled);
 }
 
 function drawLoading(ctx, layout) {
@@ -190,6 +197,22 @@ function drawBottomBar(ctx, layout, state) {
   ctx.textBaseline = 'middle';
   const tip = state.isComplete ? '全部找到了！' : '点击任意一张图里的不同处';
   ctx.fillText(tip, layout.tipArea.x, layout.tipArea.y + layout.tipArea.height / 2);
+}
+
+function drawAudioButton(ctx, rect, audioEnabled) {
+  const enabled = audioEnabled !== false;
+  drawRoundRect(ctx, rect.x, rect.y, rect.width, rect.height, 8, enabled ? '#fff7ed' : '#f3f4f6');
+  ctx.strokeStyle = COLORS.line;
+  ctx.lineWidth = 1;
+  roundedPath(ctx, rect.x, rect.y, rect.width, rect.height, 8);
+  ctx.stroke();
+
+  ctx.fillStyle = enabled ? COLORS.primary : COLORS.muted;
+  ctx.font = '700 15px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(enabled ? '♪' : '×', rect.x + rect.width / 2, rect.y + rect.height / 2);
+  ctx.textAlign = 'left';
 }
 
 function drawVictory(ctx, layout, state) {
