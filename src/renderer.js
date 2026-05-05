@@ -1,25 +1,31 @@
 const COLORS = {
-  background: '#f7efe2',
+  backgroundTop: '#fff7e8',
+  backgroundBottom: '#eaf8f4',
   ink: '#27313f',
   muted: '#6f7b8a',
+  softText: '#8f7b68',
   panel: '#fffdf8',
   primary: '#ff6b3d',
   primaryDark: '#d94e24',
+  primarySoft: '#ffe2d5',
   accent: '#21b7a8',
+  accentSoft: '#c9f3ed',
+  gold: '#ffd166',
   line: '#eadbc8',
   success: '#26b56f',
   danger: '#ef4444',
-  shadow: 'rgba(39, 49, 63, 0.14)'
+  shadow: 'rgba(39, 49, 63, 0.14)',
+  softShadow: 'rgba(39, 49, 63, 0.08)'
 };
 
 function computeLayout(width, height, level) {
   const margin = 16;
-  const topHeight = 78;
-  const bottomHeight = 70;
-  const gap = 12;
-  const labelHeight = 24;
+  const topHeight = 96;
+  const bottomHeight = 84;
+  const gap = 10;
+  const labelHeight = 32;
   const imageRatio = level.width / level.height;
-  const availableHeight = height - topHeight - bottomHeight - margin - gap - labelHeight * 2;
+  const availableHeight = height - topHeight - bottomHeight - margin - gap - labelHeight * 2 - 12;
   const maxPanelWidth = width - margin * 2;
   const imageHeight = Math.min(maxPanelWidth / imageRatio, availableHeight / 2);
   const imageWidth = imageHeight * imageRatio;
@@ -39,15 +45,15 @@ function computeLayout(width, height, level) {
     rightPanel,
     restartButton: {
       x: margin,
-      y: height - 54,
-      width: 120,
-      height: 42
+      y: height - 62,
+      width: 112,
+      height: 44
     },
     tipArea: {
-      x: margin + 132,
-      y: height - 52,
-      width: width - margin * 2 - 132,
-      height: 42
+      x: margin + 126,
+      y: height - 62,
+      width: width - margin * 2 - 126,
+      height: 44
     },
     victoryButton: {
       x: width / 2 - 76,
@@ -57,9 +63,15 @@ function computeLayout(width, height, level) {
     },
     audioButton: {
       x: width - margin - 42,
-      y: 36,
+      y: 34,
       width: 34,
       height: 34
+    },
+    progressBar: {
+      x: margin + 116,
+      y: 58,
+      width: Math.max(112, width - margin * 2 - 188),
+      height: 12
     }
   };
 }
@@ -69,6 +81,7 @@ function makePanel(side, label, x, y, width, imageHeight, labelHeight) {
     side,
     label,
     labelRect: { x, y, width, height: labelHeight },
+    panelRect: { x: x - 4, y, width: width + 8, height: labelHeight + imageHeight + 8 },
     imageRect: { x, y: y + labelHeight, width, height: imageHeight }
   };
 }
@@ -95,31 +108,37 @@ function render(ctx, model) {
 }
 
 function clear(ctx, width, height) {
-  ctx.fillStyle = COLORS.background;
+  const gradient = ctx.createLinearGradient(0, 0, 0, height);
+  gradient.addColorStop(0, COLORS.backgroundTop);
+  gradient.addColorStop(1, COLORS.backgroundBottom);
+  ctx.fillStyle = gradient;
   ctx.fillRect(0, 0, width, height);
+  drawBackgroundPattern(ctx, width, height);
 }
 
 function drawTopBar(ctx, layout, state, audioEnabled) {
-  ctx.fillStyle = COLORS.ink;
-  ctx.font = '700 22px sans-serif';
-  ctx.textBaseline = 'top';
-  ctx.fillText('找不同', layout.margin, 18);
+  drawRoundRect(ctx, layout.margin, 12, layout.width - layout.margin * 2, 72, 8, 'rgba(255, 253, 248, 0.78)');
 
-  ctx.fillStyle = COLORS.muted;
-  ctx.font = '14px sans-serif';
-  ctx.fillText(state.level.name, layout.margin, 47);
+  ctx.fillStyle = COLORS.ink;
+  ctx.font = '700 24px sans-serif';
+  ctx.textBaseline = 'top';
+  ctx.fillText('找不同', layout.margin + 12, 20);
+
+  drawLevelPill(ctx, layout.margin + 12, 51, state.level.name);
 
   const progressText = `${state.foundCount}/${state.totalCount}`;
-  ctx.font = '700 22px sans-serif';
+  ctx.font = '700 20px sans-serif';
   const progressWidth = ctx.measureText(progressText).width;
   ctx.fillStyle = COLORS.primary;
-  ctx.fillText(progressText, layout.audioButton.x - 12 - progressWidth, 26);
+  ctx.fillText(progressText, layout.audioButton.x - 14 - progressWidth, 25);
   drawAudioButton(ctx, layout.audioButton, audioEnabled);
+  drawProgressDots(ctx, layout.progressBar, state);
 }
 
 function drawLoading(ctx, layout) {
-  ctx.fillStyle = COLORS.muted;
-  ctx.font = '16px sans-serif';
+  drawRoundRect(ctx, layout.margin, layout.height / 2 - 38, layout.width - layout.margin * 2, 76, 8, COLORS.panel);
+  ctx.fillStyle = COLORS.ink;
+  ctx.font = '700 16px sans-serif';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.fillText('图片加载中...', layout.width / 2, layout.height / 2);
@@ -127,17 +146,22 @@ function drawLoading(ctx, layout) {
 }
 
 function drawPanel(ctx, panel, image) {
-  ctx.fillStyle = COLORS.muted;
-  ctx.font = '13px sans-serif';
-  ctx.textBaseline = 'top';
-  ctx.fillText(panel.label, panel.labelRect.x, panel.labelRect.y + 3);
+  drawRoundRect(ctx, panel.panelRect.x, panel.panelRect.y + 4, panel.panelRect.width, panel.panelRect.height, 8, COLORS.softShadow);
+  drawRoundRect(ctx, panel.panelRect.x, panel.panelRect.y, panel.panelRect.width, panel.panelRect.height, 8, COLORS.panel);
 
-  drawRoundRect(ctx, panel.imageRect.x - 4, panel.imageRect.y - 4, panel.imageRect.width + 8, panel.imageRect.height + 8, 8, COLORS.shadow);
-  drawRoundRect(ctx, panel.imageRect.x - 2, panel.imageRect.y - 2, panel.imageRect.width + 4, panel.imageRect.height + 4, 8, COLORS.panel);
+  const labelWidth = panel.side === 'left' ? 56 : 70;
+  drawRoundRect(ctx, panel.labelRect.x + 8, panel.labelRect.y + 5, labelWidth, 22, 8, panel.side === 'left' ? COLORS.accentSoft : COLORS.primarySoft);
+  ctx.fillStyle = panel.side === 'left' ? '#16897f' : COLORS.primaryDark;
+  ctx.font = '700 13px sans-serif';
+  ctx.textBaseline = 'top';
+  ctx.fillText(panel.label, panel.labelRect.x + 20, panel.labelRect.y + 9);
+
+  drawRoundRect(ctx, panel.imageRect.x - 2, panel.imageRect.y - 2, panel.imageRect.width + 4, panel.imageRect.height + 4, 8, COLORS.line);
 
   ctx.save();
   roundedClip(ctx, panel.imageRect, 6);
   ctx.drawImage(image, panel.imageRect.x, panel.imageRect.y, panel.imageRect.width, panel.imageRect.height);
+  drawImageGloss(ctx, panel.imageRect);
   ctx.restore();
 }
 
@@ -148,13 +172,20 @@ function drawMarks(ctx, layout, state) {
     panels.forEach((panel) => {
       const point = imageToScreen(panel.imageRect, state.level, mark);
       ctx.save();
+      const radius = Math.max(12, ((mark.radius || 20) / state.level.width) * panel.imageRect.width);
+      ctx.lineWidth = 6;
+      ctx.strokeStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.arc(point.x, point.y, radius + 1, 0, Math.PI * 2);
+      ctx.stroke();
       ctx.lineWidth = 4;
       ctx.strokeStyle = COLORS.success;
       ctx.fillStyle = 'rgba(38, 181, 111, 0.14)';
       ctx.beginPath();
-      ctx.arc(point.x, point.y, Math.max(12, ((mark.radius || 20) / state.level.width) * panel.imageRect.width), 0, Math.PI * 2);
+      ctx.arc(point.x, point.y, radius, 0, Math.PI * 2);
       ctx.fill();
       ctx.stroke();
+      drawCheck(ctx, point.x, point.y, Math.max(8, radius * 0.34));
       ctx.restore();
     });
   });
@@ -173,7 +204,7 @@ function drawFeedback(ctx, feedback) {
   const alpha = 1 - age / 420;
   ctx.save();
   ctx.globalAlpha = alpha;
-  ctx.lineWidth = 3;
+  ctx.lineWidth = feedback.type === 'hit' ? 5 : 3;
   ctx.strokeStyle = feedback.type === 'hit' ? COLORS.success : COLORS.danger;
   ctx.beginPath();
   ctx.arc(feedback.x, feedback.y, feedback.type === 'hit' ? 20 : 14, 0, Math.PI * 2);
@@ -186,16 +217,19 @@ function drawFeedback(ctx, feedback) {
     ctx.moveTo(feedback.x + 8, feedback.y - 8);
     ctx.lineTo(feedback.x - 8, feedback.y + 8);
     ctx.stroke();
+  } else {
+    drawBurst(ctx, feedback.x, feedback.y, 26);
   }
   ctx.restore();
 }
 
 function drawBottomBar(ctx, layout, state) {
+  drawRoundRect(ctx, 0, layout.height - 78, layout.width, 78, 0, 'rgba(255, 253, 248, 0.88)');
   drawButton(ctx, layout.restartButton, '重置本关', COLORS.primary);
-  ctx.fillStyle = COLORS.muted;
+  ctx.fillStyle = state.isComplete ? COLORS.success : COLORS.softText;
   ctx.font = '13px sans-serif';
   ctx.textBaseline = 'middle';
-  const tip = state.isComplete ? '全部找到了！' : '点击任意一张图里的不同处';
+  const tip = state.isComplete ? '全部找到了' : '观察细节，找到变化';
   ctx.fillText(tip, layout.tipArea.x, layout.tipArea.y + layout.tipArea.height / 2);
 }
 
@@ -221,21 +255,23 @@ function drawVictory(ctx, layout, state) {
 
   const card = {
     x: layout.margin,
-    y: layout.height / 2 - 118,
+    y: layout.height / 2 - 122,
     width: layout.width - layout.margin * 2,
-    height: 246
+    height: 252
   };
-  drawRoundRect(ctx, card.x, card.y, card.width, card.height, 10, COLORS.panel);
+  drawRoundRect(ctx, card.x, card.y + 4, card.width, card.height, 8, COLORS.shadow);
+  drawRoundRect(ctx, card.x, card.y, card.width, card.height, 8, COLORS.panel);
+  drawMedal(ctx, layout.width / 2, card.y + 42);
 
   ctx.textAlign = 'center';
   ctx.textBaseline = 'top';
   ctx.fillStyle = COLORS.ink;
-  ctx.font = '700 26px sans-serif';
-  ctx.fillText('通关成功', layout.width / 2, card.y + 34);
+  ctx.font = '700 25px sans-serif';
+  ctx.fillText('通关成功', layout.width / 2, card.y + 78);
 
   ctx.fillStyle = COLORS.muted;
   ctx.font = '15px sans-serif';
-  ctx.fillText(`你找出了 ${state.totalCount} 处不同`, layout.width / 2, card.y + 82);
+  ctx.fillText(`找出了 ${state.totalCount} 处不同`, layout.width / 2, card.y + 120);
 
   const label = state.hasNextLevel ? '下一关' : '再玩一次';
   drawButton(ctx, layout.victoryButton, label, COLORS.accent);
@@ -243,6 +279,7 @@ function drawVictory(ctx, layout, state) {
 }
 
 function drawButton(ctx, rect, label, color) {
+  drawRoundRect(ctx, rect.x, rect.y + 3, rect.width, rect.height, 8, color === COLORS.primary ? COLORS.primaryDark : '#158f84');
   drawRoundRect(ctx, rect.x, rect.y, rect.width, rect.height, 8, color);
   ctx.fillStyle = '#ffffff';
   ctx.font = '700 15px sans-serif';
@@ -250,6 +287,101 @@ function drawButton(ctx, rect, label, color) {
   ctx.textBaseline = 'middle';
   ctx.fillText(label, rect.x + rect.width / 2, rect.y + rect.height / 2);
   ctx.textAlign = 'left';
+}
+
+function drawBackgroundPattern(ctx, width, height) {
+  ctx.save();
+  ctx.globalAlpha = 0.24;
+  ctx.strokeStyle = '#ffd166';
+  ctx.lineWidth = 2;
+  for (let x = -60; x < width; x += 92) {
+    ctx.beginPath();
+    ctx.moveTo(x, 96);
+    ctx.lineTo(x + 34, 72);
+    ctx.lineTo(x + 68, 96);
+    ctx.stroke();
+  }
+  ctx.globalAlpha = 0.16;
+  ctx.fillStyle = COLORS.accent;
+  for (let y = 130; y < height - 120; y += 120) {
+    ctx.fillRect(width - 24, y, 8, 8);
+    ctx.fillRect(18, y + 42, 6, 6);
+  }
+  ctx.restore();
+}
+
+function drawLevelPill(ctx, x, y, label) {
+  const width = Math.max(86, ctx.measureText(label).width + 28);
+  drawRoundRect(ctx, x, y, width, 24, 8, COLORS.accentSoft);
+  ctx.fillStyle = '#16897f';
+  ctx.font = '700 13px sans-serif';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(label, x + 14, y + 12);
+}
+
+function drawProgressDots(ctx, rect, state) {
+  const gap = 8;
+  const dotSize = Math.min(18, (rect.width - gap * (state.totalCount - 1)) / state.totalCount);
+  const totalWidth = dotSize * state.totalCount + gap * (state.totalCount - 1);
+  let x = rect.x + (rect.width - totalWidth) / 2;
+
+  for (let i = 0; i < state.totalCount; i += 1) {
+    const found = i < state.foundCount;
+    drawRoundRect(ctx, x, rect.y, dotSize, rect.height, 6, found ? COLORS.success : '#ffffff');
+    ctx.strokeStyle = found ? COLORS.success : COLORS.line;
+    ctx.lineWidth = 1;
+    roundedPath(ctx, x, rect.y, dotSize, rect.height, 6);
+    ctx.stroke();
+    x += dotSize + gap;
+  }
+}
+
+function drawImageGloss(ctx, rect) {
+  const gradient = ctx.createLinearGradient(rect.x, rect.y, rect.x, rect.y + rect.height * 0.35);
+  gradient.addColorStop(0, 'rgba(255, 255, 255, 0.16)');
+  gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+  ctx.fillStyle = gradient;
+  ctx.fillRect(rect.x, rect.y, rect.width, rect.height * 0.35);
+}
+
+function drawCheck(ctx, x, y, size) {
+  ctx.strokeStyle = '#ffffff';
+  ctx.lineWidth = 4;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.beginPath();
+  ctx.moveTo(x - size, y);
+  ctx.lineTo(x - size * 0.28, y + size * 0.72);
+  ctx.lineTo(x + size, y - size * 0.82);
+  ctx.stroke();
+}
+
+function drawBurst(ctx, x, y, radius) {
+  ctx.strokeStyle = COLORS.gold;
+  ctx.lineWidth = 3;
+  for (let i = 0; i < 8; i += 1) {
+    const angle = (Math.PI * 2 * i) / 8;
+    ctx.beginPath();
+    ctx.moveTo(x + Math.cos(angle) * (radius - 8), y + Math.sin(angle) * (radius - 8));
+    ctx.lineTo(x + Math.cos(angle) * radius, y + Math.sin(angle) * radius);
+    ctx.stroke();
+  }
+}
+
+function drawMedal(ctx, x, y) {
+  ctx.fillStyle = COLORS.primarySoft;
+  ctx.beginPath();
+  ctx.arc(x, y, 28, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = COLORS.gold;
+  ctx.beginPath();
+  ctx.arc(x, y, 20, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = COLORS.primaryDark;
+  ctx.font = '700 19px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('✓', x, y + 1);
 }
 
 function imageToScreen(rect, level, point) {
